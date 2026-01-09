@@ -1,1 +1,4 @@
-stramlit joblib numpy scikit-learn 
+streamlit 
+joblib
+numpy
+scikit-learn 
