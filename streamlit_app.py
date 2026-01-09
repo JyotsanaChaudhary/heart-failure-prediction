@@ -1,254 +1,52 @@
+# app.py
 import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-import time
+import joblib
+import numpy as np
 
-# ---------- PAGE CONFIG ----------
-st.set_page_config(
-    page_title="Smart Traffic Monitoring & Analytics",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="Heart Failure Prediction", page_icon="❤️", layout="centered")
 
-# ---------- PROFESSIONAL UI CSS ----------
-st.markdown("""
-<style>
+st.title("❤️ Heart Failure Prediction App")
+st.write("Enter the patient details below:")
 
-/* Font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+# --- USER INPUT ---
+age = st.number_input("Age", min_value=1, max_value=120, value=60)
+anaemia = st.selectbox("Anaemia", ["No", "Yes"])
+creatinine_phosphokinase = st.number_input("Creatinine Phosphokinase (mcg/L)", min_value=0, max_value=10000, value=250)
+diabetes = st.selectbox("Diabetes", ["No", "Yes"])
+ejection_fraction = st.number_input("Ejection Fraction (%)", min_value=10, max_value=100, value=40)
+high_blood_pressure = st.selectbox("High Blood Pressure", ["No", "Yes"])
+platelets = st.number_input("Platelets (kiloplatelets/mL)", min_value=0, max_value=1000000, value=300000)
+serum_creatinine = st.number_input("Serum Creatinine (mg/dL)", min_value=0.0, max_value=20.0, value=1.0)
+serum_sodium = st.number_input("Serum Sodium (mEq/L)", min_value=100, max_value=160, value=135)
+sex = st.selectbox("Sex", ["Female", "Male"])
+smoking = st.selectbox("Smoking", ["No", "Yes"])
+time = st.number_input("Follow-up period (days)", min_value=0, max_value=5000, value=100)
 
-/* Hide default Streamlit UI */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
+# Convert categorical inputs to numerical (0/1)
+anaemia_val = 1 if anaemia == "Yes" else 0
+diabetes_val = 1 if diabetes == "Yes" else 0
+high_blood_pressure_val = 1 if high_blood_pressure == "Yes" else 0
+sex_val = 1 if sex == "Male" else 0
+smoking_val = 1 if smoking == "Yes" else 0
 
-/* Global */
-.stApp {
-    background-color: #0e1117;
-    font-family: 'Inter', sans-serif;
-    color: #e5e7eb;
-}
+# Load model and scaler
+model = joblib.load("heart_model.pkl")
+scaler = joblib.load("scaler.pkl")
 
-/* Metric Cards */
-[data-testid="stMetric"] {
-    background: linear-gradient(145deg, #151a21, #1a1f26);
-    border: 1px solid #2a303a;
-    padding: 28px;
-    border-radius: 16px;
-    text-align: center;
-    box-shadow: 0 4px 30px rgba(0,0,0,0.5);
-}
-
-/* Metric Value */
-div[data-testid="stMetricValue"] {
-    font-size: 54px !important;
-    font-weight: 900 !important;
-    letter-spacing: -1px;
-    color: #ffffff !important;
-}
-
-/* Metric Label */
-div[data-testid="stMetricLabel"] {
-    font-size: 15px !important;
-    font-weight: 600;
-    letter-spacing: 0.7px;
-    text-transform: uppercase;
-    color: #9ca3af !important;
-}
-
-/* Title */
-.main-title {
-    font-size: 58px;
-    font-weight: 800;
-    letter-spacing: -0.5px;
-    color: #ffffff;
-    margin-bottom: 10px;
-}
-
-/* Status */
-.status-text {
-    color: #22c55e;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-/* Signal Simulator Card */
-.signal-card {
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-    text-align: center;
-    margin-bottom: 20px;
-    color: white;
-}
-
-.signal-text {
-    font-size: 32px;
-    font-weight: 800;
-    margin-bottom: 10px;
-}
-
-.countdown {
-    font-size: 22px;
-    color: #e5e7eb;
-}
-
-.button-style {
-    background-color: #3b82f6;
-    color: white;
-    font-weight: 600;
-    border-radius: 12px;
-    padding: 8px 18px;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ---------- SIDEBAR ----------
-with st.sidebar:
-    st.title("Control Panel")
-    st.write("---")
-    st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
-    st.file_uploader("Upload Video", type=["mp4", "mov"])
-    st.write("---")
-    st.markdown("**Signal Simulation Settings**")
-    green = st.number_input("Green Duration (s)", min_value=1, value=5)
-    yellow = st.number_input("Yellow Duration (s)", min_value=1, value=2)
-    red = st.number_input("Red Duration (s)", min_value=1, value=4)
-
-# ---------- HEADER ----------
-st.markdown(
-    "<h2 class='main-title'>Smart Traffic Monitoring & Analytics</h2>",
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    f"""
-    System Node: <b>Vadodara-04</b> |
-    Status: <span class="status-text">Operational</span> |
-    Time: {time.strftime('%H:%M:%S')}
-    """,
-    unsafe_allow_html=True
-)
-
-st.write("")
-
-# ---------- DATA ----------
-total_v = 42
-car, bike, bus, truck = 25, 12, 3, 2
-
-# ---------- METRICS ----------
-col1, col2, col3, col4 = st.columns(4, gap="medium")
-col1.metric("Total Vehicles", total_v)
-col2.metric("Cars", car)
-col3.metric("Two-Wheelers", bike)
-col4.metric("Heavy Vehicles", bus + truck)
-
-st.write("---")
-
-# ---------- ANALYTICS ----------
-col_gauge, col_bar = st.columns(2, gap="medium")
-
-with col_gauge:
-    st.subheader("Traffic Density Index")
-    fig_gauge = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=total_v,
-        gauge={
-            "axis": {"range": [0, 60]},
-            "bar": {"color": "#3b82f6"},
-            "steps": [
-                {"range": [0, 20], "color": "#065f46"},
-                {"range": [20, 40], "color": "#92400e"},
-                {"range": [40, 60], "color": "#991b1b"},
-            ],
-        }
-    ))
-    fig_gauge.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        font={"color": "white"},
-        height=380
-    )
-    st.plotly_chart(fig_gauge, use_container_width=True)
-
-with col_bar:
-    st.subheader("Vehicle Category Distribution")
-    df = pd.DataFrame({
-        "Vehicle Type": ["Cars", "Two-Wheelers", "Buses", "Trucks"],
-        "Count": [car, bike, bus, truck]
-    })
-    fig_bar = px.bar(
-        df,
-        x="Vehicle Type",
-        y="Count",
-        color="Vehicle Type",
-        template="plotly_dark",
-        color_discrete_sequence=["#2563eb", "#f97316", "#10b981", "#8b5cf6"]
-    )
-    fig_bar.update_layout(
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        height=380,
-        showlegend=False
-    )
-    st.plotly_chart(fig_bar, use_container_width=True)
-
-st.write("---")
-
-# ---------- TRAFFIC SIGNAL SIMULATOR ----------
-st.subheader("🚦 Live Traffic Signal Simulation")
-
-# Signal container
-signal_box = st.empty()
-
-# Start / Stop Buttons
-start_col, stop_col = st.columns(2)
-start = start_col.button("Start Simulation")
-stop = stop_col.button("Stop Simulation")
-
-# Session state for simulation
-if "running" not in st.session_state:
-    st.session_state.running = False
-
-if start:
-    st.session_state.running = True
-if stop:
-    st.session_state.running = False
-
-# Signal loop
-while st.session_state.running:
-    # GREEN
-    for i in range(green, 0, -1):
-        if not st.session_state.running:
-            break
-        signal_box.markdown(f"""
-        <div class="signal-card" style="background-color:#065f46;">
-            <div class="signal-text">🟢 GREEN</div>
-            <div class="countdown">{i} s remaining</div>
-        </div>
-        """, unsafe_allow_html=True)
-        time.sleep(1)
-
-    # YELLOW
-    for i in range(yellow, 0, -1):
-        if not st.session_state.running:
-            break
-        signal_box.markdown(f"""
-        <div class="signal-card" style="background-color:#b45309;">
-            <div class="signal-text">🟡 YELLOW</div>
-            <div class="countdown">{i} s remaining</div>
-        </div>
-        """, unsafe_allow_html=True)
-        time.sleep(1)
-
-    # RED
-    for i in range(red, 0, -1):
-        if not st.session_state.running:
-            break
-        signal_box.markdown(f"""
-        <div class="signal-card" style="background-color:#991b1b;">
-            <div class="signal-text">🔴 RED</div>
-            <div class="countdown">{i} s remaining</div>
-        </div>
-        """, unsafe_allow_html=True)
-        time.sleep(1)
+# --- PREDICTION ---
+if st.button("Predict"):
+    # Arrange input in the same order as dataset
+    user_input = np.array([[age, anaemia_val, creatinine_phosphokinase, diabetes_val,
+                            ejection_fraction, high_blood_pressure_val, platelets,
+                            serum_creatinine, serum_sodium, sex_val, smoking_val, time]])
+    
+    # Scale input
+    user_input_scaled = scaler.transform(user_input)
+    
+    # Predict
+    prediction = model.predict(user_input_scaled)
+    
+    if prediction[0] == 1:
+        st.error("⚠️ Prediction: High risk of Heart Failure!")
+    else:
+        st.success("✅ Prediction: No Heart Failure risk detected!")
